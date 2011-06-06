@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="955" minHeight="600">
+	<fx:Declarations>
+		
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			
+			import com.facebook.graph.Facebook;
+			
+			import utils.Constants;
+			import utils.ImageStore;
+			
+			//--------------------------------facebook section------------------------------------------------------------------------
+			
+			protected function facebookInit():void
+			{
+				Facebook.init(Constants.APPLICATION_ID);
+			} 
+			
+			protected function loginHandler(success:Object, fail:Object, token:String = ""):void
+			{
+				if(success){    
+					applicationViewStack.selectedChild = applicationPage;
+					
+					userMenu.label = success.user.name;
+					userIcon.source = FacebookDesktop.getImageUrl(success.uid,"square");
+					if(token != ""){
+						textInput.text = token;
+					}
+					initPanels();
+					
+				}else{    
+					
+				}
+			}
+			
+			protected function logoutHandler(success:Boolean):void
+			{
+				if (success){
+					applicationViewStack.selectedChild = loginPage;
+				}else{
+					FacebookDesktop.logout(logoutHandler,Constants.LINK_CANVAS_URL);
+				}
+			}
+			
+			protected function login():void
+			{
+				FacebookDesktop.login(loginHandler,"friends_status","read_friendlists","friends_birthday", "friends_hometown");
+				
+			}
+			
+			protected function logout():void
+			{
+				FacebookDesktop.logout(logoutHandler,Constants.LINK_CANVAS_URL);
+				//URLRequestDefaults.manageCookies = false;
+				
+			}
+		]]>
+	</fx:Script>
+</s:Application>
