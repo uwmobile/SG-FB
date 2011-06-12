@@ -1,64 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
 			   xmlns:s="library://ns.adobe.com/flex/spark" 
-			   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="955" minHeight="600">
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   minWidth="955" 
+			   minHeight="600"
+			   creationComplete="initApp()" 
+			   xmlns:com="com.*">
 	<fx:Declarations>
 		
 	</fx:Declarations>
 	
 	<fx:Script>
 		<![CDATA[
-			
 			import com.facebook.graph.Facebook;
+			
+			import controllers.MostPopularFriends;
+			
+			import events.AppCompleteEvent;
+			import events.EventFactory;
+			
+			import models.FriendsModel;
 			
 			import utils.Constants;
 			import utils.ImageStore;
 			
 			//--------------------------------facebook section------------------------------------------------------------------------
 			
-			protected function facebookInit():void
+			private function initApp():void
 			{
+				//Facebook.init(Constants.APPLICATION_ID, loginHandler);
 				Facebook.init(Constants.APPLICATION_ID);
 			} 
 			
-			protected function loginHandler(success:Object, fail:Object, token:String = ""):void
+			private function loginHandler(success:Object,fail:Object):void
 			{
 				if(success){    
-					applicationViewStack.selectedChild = applicationPage;
-					
-					userMenu.label = success.user.name;
-					userIcon.source = FacebookDesktop.getImageUrl(success.uid,"square");
-					if(token != ""){
-						textInput.text = token;
-					}
-					initPanels();
-					
-				}else{    
-					
-				}
+					//userIcon.source=Facebook.getImageUrl(success.uid,"small");
+					FriendsModel.load();
+				} 
 			}
 			
-			protected function logoutHandler(success:Boolean):void
+			private function login():void
 			{
-				if (success){
-					applicationViewStack.selectedChild = loginPage;
-				}else{
-					FacebookDesktop.logout(logoutHandler,Constants.LINK_CANVAS_URL);
-				}
-			}
-			
-			protected function login():void
-			{
-				FacebookDesktop.login(loginHandler,"friends_status","read_friendlists","friends_birthday", "friends_hometown");
+				Facebook.login(loginHandler,{perms:"user_birthday,read_stream,publish_stream"});
 				
 			}
 			
-			protected function logout():void
+			//run a specific application
+			private function runApp(appID:int):void
 			{
-				FacebookDesktop.logout(logoutHandler,Constants.LINK_CANVAS_URL);
-				//URLRequestDefaults.manageCookies = false;
+				//first add event listener for when a specific app completes
+				EventFactory.addEventListener(Constants.EVENT_APP_COMPLETE,displayResultPage,false,0,true);
 				
+				switch (appID){
+					case Constants.APP_MOST_POPULAR_FRIEND:
+						
+						MostPopularFriends.run();
+						break;
+				}
+				
+				//show a loading screen when the app runs in the background
+				showLoadingScreen();
+			}
+			
+			private function showLoadingScreen():void
+			{
+				progressBar.visible = true;
+			}
+			
+			private function displayResultPage(event:AppCompleteEvent):void
+			{
+				progressBar.visible = false;
+				outputText.text = event.data.join(",");
 			}
 		]]>
 	</fx:Script>
+	
+	<mx:Canvas id="loginPage" width="100%" height="100%">
+		<mx:VBox>
+			<mx:LinkButton label="who's my most popular friend" click="runApp(Constants.APP_MOST_POPULAR_FRIEND)" />
+			<s:Button click="login()" buttonMode="true" useHandCursor="true"/>
+			<mx:ProgressBar id="progressBar" indeterminate="true" visible="false" />
+		</mx:VBox>
+		<s:Label id="outputText"/>
+	</mx:Canvas>
+	
 </s:Application>
